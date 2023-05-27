@@ -14380,22 +14380,56 @@ var VRCube = class extends Component {
     console.log("init() with param", this.param);
     this.rotation = new Float32Array(4);
     quat_exports.fromEuler(this.rotation, 1, 1, 0);
-    this.tmpQuat = quat_exports.create();
+    this.cubeQuat = quat_exports.create();
+    this.direrction = vec3_exports.create();
+    this.cubeVec = vec3_exports.create();
+    this.cameraVec = vec3_exports.create();
   }
   start() {
     console.log("start() with param", this.param);
     this.cube = this.object;
     console.log("Object ready for action. Object name: " + this.cube.name);
+    this.spawn();
   }
   update(dt) {
-    quat_exports.scale(this.tmpQuat, this.rotation, dt);
+    quat_exports.scale(this.cubeQuat, this.rotation, dt);
     this.cube.rotateObject(this.tmpQuat);
+    if (this.vrCamera && this.cubeVec && this.cameraVec) {
+      vec3_exports.copy(this.cubeVec, this.direction);
+      vec3_exports.scale(this.cubeVec, this.cubeVec, dt);
+      this.cube.translateLocal(this.cubeVec);
+      if (this.angleBetweenCubeAndCamera() > Math.PI / 2) {
+        this.spawn();
+      }
+    }
+  }
+  angleBetweenCubeAndCamera() {
+    this.cube.getPositionWorld(this.cubeVec);
+    this.vrCamera.getTranslationWorld(this.cameraVec);
+    vec3_exports.subtract(this.cubeVec, this.cubeVec, this.cameraVec);
+    vec3_exports.normalize(this.cubeVec, this.cubeVec);
+    this.vrCAmera.getForward(this.cameraVec);
+    return vec3_exports.angle(this.cubeVec, this.cameraVec);
+  }
+  spawn() {
+    if (this.vrCamera == null) {
+      console.warn("Can't define player position");
+      return;
+    }
+    this.vrCamera.getForward(this.direction);
+    vec3_exports.copy(this.cubeVec, this.direction);
+    vec3_exports.scale(this.cubeVec, this.cubeVec, 30);
+    this.vrCamera.getPositionWorld(this.cameraVec);
+    vec3_exports.add(this.cubeVec, this.cubeVec, this.cameraVec);
+    this.cube.setPositionWorld(this.cubeVec);
+    vec3_exports.scale(this.direrction, this.direrction, -this.speed);
   }
 };
 __publicField(VRCube, "TypeName", "VRCube");
 /* Properties that are configurable in the editor */
 __publicField(VRCube, "Properties", {
-  param: Property.float(1)
+  vrCamera: Property.object(null),
+  param: Property.float(5)
 });
 /* Add other component types here that your component may
  * create. They will be registered with this component */
